@@ -1,1 +1,0 @@
-package org.spring.boot.forge.addon;
