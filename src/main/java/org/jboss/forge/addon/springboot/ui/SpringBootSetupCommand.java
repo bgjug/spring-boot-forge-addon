@@ -13,6 +13,7 @@ import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UISelection;
+import org.jboss.forge.addon.ui.hints.InputType;
 import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
@@ -26,6 +27,14 @@ import org.jboss.forge.roaster.model.source.JavaClassSource;
 import javax.inject.Inject;
 
 public class SpringBootSetupCommand extends AbstractProjectCommand {
+
+    @Inject
+    @WithAttributes(label = "Application class ", description = "The name of the generated application class", required = true, defaultValue = "Application")
+    private UIInput<String> application;
+
+    @Inject
+    @WithAttributes(label = "Target package", type = InputType.JAVA_PACKAGE_PICKER)
+    private UIInput<String> targetPackage;
 
     @Inject
     private ProjectFactory projectFactory;
@@ -45,8 +54,10 @@ public class SpringBootSetupCommand extends AbstractProjectCommand {
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
         Project project = getSelectedProject(builder.getUIContext());
+        application.setDefaultValue("Application");
         if (project == null) {
             UISelection<FileResource<?>> currentSelection = builder.getUIContext().getInitialSelection();
+
             if (!currentSelection.isEmpty()) {
                 FileResource<?> resource = currentSelection.get();
                 if (resource instanceof DirectoryResource) {
@@ -59,8 +70,11 @@ public class SpringBootSetupCommand extends AbstractProjectCommand {
             if (project.hasFacet(JavaSourceFacet.class)) {
                 JavaSourceFacet facet = project.getFacet(JavaSourceFacet.class);
                 targetLocation.setDefaultValue(facet.getSourceDirectory()).setEnabled(false);
+
+                targetPackage.setValue(project.getFacet(JavaSourceFacet.class).getBasePackage());
             }
         }
+        builder.add(targetLocation).add(targetPackage).add(application);
     }
 
     @Override
@@ -69,12 +83,26 @@ public class SpringBootSetupCommand extends AbstractProjectCommand {
         Project project = getSelectedProject(context);
         facetFactory.install(project, SpringBootFacet.class);
 
-        JavaClassSource javaClass = createJavaClass("Application", project.getFacet(JavaSourceFacet.class).getBasePackage());
-        DirectoryResource targetDir = targetLocation.getValue();
-        JavaResource javaResource = getJavaResource(targetDir, javaClass.getName());
-        javaResource.setContents(javaClass);
 
+        DirectoryResource targetDir = targetLocation.getValue();
+
+        JavaResource javaResource;
+
+        String application = this.application.getValue();
+        String targetPackage = this.targetPackage.getValue();
+        if (project == null) {
+            JavaClassSource javaClass = createJavaClass(application, targetPackage);
+            javaResource = getJavaResource(targetDir, javaClass.getName());
+            javaResource.setContents(javaClass);
+        } else {
+            JavaSourceFacet java = project.getFacet(JavaSourceFacet.class);
+            JavaClassSource javaClass = createJavaClass(application, targetPackage);
+            javaResource = java.saveJavaSource(javaClass);
+        }
+        context.getUIContext().getAttributeMap().put(JavaResource.class, javaResource);
+        context.getUIContext().setSelection(javaResource);
         return Results.success("Command 'spring-boot-setup' successfully executed!");
+
     }
 
     @Override
@@ -91,6 +119,16 @@ public class SpringBootSetupCommand extends AbstractProjectCommand {
         JavaClassSource application = Roaster.create(JavaClassSource.class).setName(className).setPublic().getOrigin();
 
         application.addAnnotation("org.springframework.boot.autoconfigure.SpringBootApplication");
+
+
+        application.addImport("org.springframework.boot.SpringApplication");
+        application
+                        .addMethod()
+                        .setName("main")
+                        .setPublic()
+                        .setStatic(true)
+                        .setBody("SpringApplication.run("+className+".class, args);")
+                        .addParameter(String[].class, "args");
 
         if (classPackage != null && !classPackage.isEmpty()) {
             application.setPackage(classPackage);
