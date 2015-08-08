@@ -11,6 +11,7 @@ import org.jboss.forge.addon.projects.Project;
 import org.jboss.forge.addon.resource.DirectoryResource;
 import org.jboss.forge.addon.resource.FileResource;
 import org.jboss.forge.addon.resource.visit.VisitContext;
+import org.jboss.forge.addon.springboot.descriptors.SpringBootDescriptor;
 import org.jboss.forge.furnace.versions.Version;
 import org.jboss.forge.roaster.model.JavaType;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
@@ -24,7 +25,7 @@ import java.util.List;
  * @author <a href="ivan.st.ivanov@gmail.com">Ivan St. Ivanov</a>
  */
 @FacetConstraint(SpringBootFacet.class)
-public class SpringBootJPAFacetImpl extends AbstractFacet<Project> implements JPAFacet {
+public class SpringBootJPAFacetImpl extends AbstractFacet<Project> implements JPAFacet<SpringBootDescriptor> {
 
 
     @Override
@@ -85,7 +86,7 @@ public class SpringBootJPAFacetImpl extends AbstractFacet<Project> implements JP
     }
 
     @Override
-    public Object getConfig() {
+    public SpringBootDescriptor getConfig() {
         return null;
     }
 
@@ -95,7 +96,7 @@ public class SpringBootJPAFacetImpl extends AbstractFacet<Project> implements JP
     }
 
     @Override
-    public void saveConfig(Object o) {
+    public void saveConfig(SpringBootDescriptor o) {
 
     }
 
