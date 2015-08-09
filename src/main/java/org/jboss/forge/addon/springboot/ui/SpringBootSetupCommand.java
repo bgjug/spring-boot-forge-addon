@@ -48,7 +48,7 @@ public class SpringBootSetupCommand extends AbstractProjectCommand {
 
     @Override
     public UICommandMetadata getMetadata(UIContext context) {
-        return Metadata.forCommand(SpringBootSetupCommand.class).name("spring-boot-setup").category(Categories.create("Spring Boot"));
+        return Metadata.forCommand(SpringBootSetupCommand.class).name("Spring Boot: Setup").category(Categories.create("Spring Boot"));
     }
 
     @Override
