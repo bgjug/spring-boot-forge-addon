@@ -45,11 +45,16 @@ public class SpringMvcScaffoldProvider implements ScaffoldProvider
 {
    private static final String INDEX_JSP = "/index.jsp";
    private static final String INDEX_JSP_FTL = "/scaffold/springmvc/index.jsp.ftl";
+   
    private static final String CONTROLLER_BEAN_TEMPLATE = "/scaffold/springmvc/BeanController.java.ftl";
+   private static final String LIST_JSP_TEMPLATE = "/scaffold/springmvc/bean-list.jsp.ftl";
+   private static final String FORM_JSP_TEMPLATE = "/scaffold/springmvc/bean-form.jsp.ftl";
    
    protected FreemarkerTemplateProcessor templateProcessor;
    
    protected Template controllerBeanTemplate;
+   protected Template listJspTemplate;
+   protected Template formJspTemplate;
 
    private Configuration config;
    private Project project;
@@ -251,11 +256,11 @@ public class SpringMvcScaffoldProvider implements ScaffoldProvider
          WebResourcesFacet web = this.project.getFacet(WebResourcesFacet.class);
 //         JPAFacet<PersistenceCommonDescriptor> jpa = this.project.getFacet(JPAFacet.class);
 //
-//         loadTemplates();
+         loadTemplates();
          Map<Object, Object> context = new HashMap<Object, Object>();
-//         context.put("entity", entity);
-//         String ccEntity = StringUtils.decapitalize(entity.getName());
-//         context.put("ccEntity", ccEntity);
+         context.put("entity", entity);
+         String ccEntity = decapitalize(entity.getName());
+         context.put("ccEntity", ccEntity);
 //         context.put("rmEntity", ccEntity + "ToDelete");
 //         setPrimaryKeyMetaData(context, entity);
 //
@@ -306,9 +311,13 @@ public class SpringMvcScaffoldProvider implements ScaffoldProvider
 //         // Generate create
 //         writeEntityMetawidget(context, this.createTemplateEntityMetawidgetIndent, this.createTemplateNamespaces);
 //
-//         result.add(ScaffoldUtil.createOrOverwrite(
-//                  web.getWebResource(targetDir + "/" + ccEntity + "/create.xhtml"),
-//                  this.templateProcessor.processTemplate(context, this.createTemplate)));
+         result.add(ScaffoldUtil.createOrOverwrite(
+                  web.getWebResource(targetDir + "/" + ccEntity + "/" + ccEntity + "-form.jsp"),
+                  this.templateProcessor.processTemplate(context, this.formJspTemplate)));
+         
+         result.add(ScaffoldUtil.createOrOverwrite(
+                 web.getWebResource(targetDir + "/" + ccEntity + "/" + ccEntity + "-list.jsp"),
+                 this.templateProcessor.processTemplate(context, this.listJspTemplate)));
 //
 //         // Generate view
 //         this.entityMetawidget.setReadOnly(true);
@@ -471,7 +480,27 @@ public class SpringMvcScaffoldProvider implements ScaffoldProvider
       if (this.controllerBeanTemplate == null)
       {
          this.controllerBeanTemplate = this.templateProcessor.getTemplate(CONTROLLER_BEAN_TEMPLATE);
-//         String template = this.controllerBeanTemplate.toString();
+      }
+      if (this.formJspTemplate == null)
+      {
+         this.formJspTemplate = this.templateProcessor.getTemplate(FORM_JSP_TEMPLATE);
+      }
+      if (this.listJspTemplate == null)
+      {
+         this.listJspTemplate = this.templateProcessor.getTemplate(LIST_JSP_TEMPLATE);
       }
    }
+   private String decapitalize(String in) {
+		char firstChar = in.charAt(0);
+
+		if (Character.isLowerCase(firstChar)) {
+			return in;
+		}
+
+		if ((in.length() > 1) && (Character.isUpperCase(in.charAt(1)))) {
+			return in;
+		}
+
+		return Character.toLowerCase(firstChar) + in.substring(1);
+	}
 }
