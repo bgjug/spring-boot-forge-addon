@@ -1,0 +1,1 @@
+package org.jboss.forge.addon.springboot.scaffold.springmvc;
