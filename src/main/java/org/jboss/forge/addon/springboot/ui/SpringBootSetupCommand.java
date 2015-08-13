@@ -1,7 +1,5 @@
 package org.jboss.forge.addon.springboot.ui;
 
-import org.jboss.forge.addon.convert.Converter;
-import org.jboss.forge.addon.dependencies.Coordinate;
 import org.jboss.forge.addon.facets.FacetFactory;
 import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
 import org.jboss.forge.addon.parser.java.resources.JavaResource;
@@ -31,8 +29,8 @@ import java.util.List;
 public class SpringBootSetupCommand extends AbstractProjectCommand {
 
     @Inject
-    @WithAttributes(label = "Application class ", description = "The name of the generated application class", required = true, defaultValue = "Application")
-    private UIInput<String> application;
+    @WithAttributes(label = "Application class", description = "The name of the generated applicationClass class", required = true, defaultValue = "Application")
+    private UIInput<String> applicationClass;
 
     @Inject
     @WithAttributes(label = "Target package", type = InputType.JAVA_PACKAGE_PICKER)
@@ -40,7 +38,7 @@ public class SpringBootSetupCommand extends AbstractProjectCommand {
 
     @Inject
     @WithAttributes(label = "Version", description = "The version of Spring Boot")
-    private UISelectOne<Coordinate> version;
+    private UISelectOne<String> version;
 
     @Inject
     private FacetFactory facetFactory;
@@ -50,31 +48,26 @@ public class SpringBootSetupCommand extends AbstractProjectCommand {
 
     @Override
     public UICommandMetadata getMetadata(UIContext context) {
-        return Metadata.forCommand(SpringBootSetupCommand.class).name("Spring Boot: Setup").category(Categories.create("Spring Boot"));
+        return Metadata.forCommand(SpringBootSetupCommand.class).name("Spring Boot: Setup")
+                .category(Categories.create("Spring Boot"));
     }
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
         Project project = getSelectedProject(builder.getUIContext());
         targetPackage.setValue(project.getFacet(JavaSourceFacet.class).getBasePackage());
-        application.setDefaultValue("Application");
+        applicationClass.setDefaultValue("Application");
 
-        version.setItemLabelConverter(new Converter<Coordinate, String>() {
-            @Override
-            public String convert(Coordinate coordinate) {
-                return coordinate.getVersion();
-            }
-        });
-        List<Coordinate> availableVersions = metadataRetriever.getAvailableVersions();
+        final List<String> availableVersions = metadataRetriever.getAvailableVersions();
         version.setValueChoices(availableVersions);
         version.setDefaultValue(findLatestVersion(availableVersions));
 
-        builder.add(targetPackage).add(application).add(version);
+        builder.add(targetPackage).add(applicationClass).add(version);
     }
 
-    private Coordinate findLatestVersion(List<Coordinate> availableVersions) {
+    private String findLatestVersion(List<String> availableVersions) {
         for (int i = availableVersions.size() - 1; i >= 0; i--) {
-            if (!availableVersions.get(i).getVersion().endsWith("SNAPSHOT")) {
+            if (!availableVersions.get(i).endsWith("SNAPSHOT")) {
                 return availableVersions.get(i);
             }
         }
@@ -84,17 +77,22 @@ public class SpringBootSetupCommand extends AbstractProjectCommand {
     @Override
     public Result execute(UIExecutionContext context) throws Exception {
         Project project = getSelectedProject(context);
-        metadataRetriever.setSelectedSpringBootVersion(version.getValue().getVersion());
+        if (project.hasFacet(SpringBootFacet.class)) {
+            return Results.fail("Spring Boot is already installed in this project.");
+        }
+
+        metadataRetriever.setSelectedSpringBootVersion(version.getValue());
         facetFactory.install(project, SpringBootFacet.class);
 
-        String application = this.application.getValue();
+        String application = this.applicationClass.getValue();
         String targetPackage = this.targetPackage.getValue();
         JavaResource javaResource = createApplicationClass(project, application, targetPackage);
 
         context.getUIContext().getAttributeMap().put(JavaResource.class, javaResource);
         context.getUIContext().setSelection(javaResource);
-        return Results.success("Spring Boot version " + metadataRetriever.getSelectedSpringBootVersion()
-                + " was setup successfully");
+        return Results
+                .success("Spring Boot version " + metadataRetriever.getSelectedSpringBootVersion()
+                        + " was setup successfully");
     }
 
     private JavaResource createApplicationClass(Project project, String application,
@@ -105,10 +103,10 @@ public class SpringBootSetupCommand extends AbstractProjectCommand {
     }
 
     private JavaClassSource createJavaClass(final String className, final String classPackage) {
-        JavaClassSource application = Roaster.create(JavaClassSource.class).setName(className).setPublic().getOrigin();
+        JavaClassSource application = Roaster.create(JavaClassSource.class).setName(className)
+                .setPublic().getOrigin();
 
         application.addAnnotation("org.springframework.boot.autoconfigure.SpringBootApplication");
-
 
         application.addImport("org.springframework.boot.SpringApplication");
         application

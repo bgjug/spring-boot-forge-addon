@@ -8,6 +8,7 @@ import org.jboss.forge.addon.dependencies.builder.DependencyQueryBuilder;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,13 +24,18 @@ public class SpringBootMetadataRetriever {
     @Inject
     private DependencyResolver dependencyResolver;
 
-    public List<Coordinate> getAvailableVersions() {
+    public List<String> getAvailableVersions() {
         CoordinateBuilder springBootParentCoordinate = DependencyBuilder.create()
                 .setGroupId(SPRING_BOOT_GROUP_ID)
                 .setArtifactId(SPRING_BOOT_PARENT_ARTIFACT_ID)
                 .getCoordinate();
-        return dependencyResolver.resolveVersions(
+        List<Coordinate> availableCoordinates = dependencyResolver.resolveVersions(
                 DependencyQueryBuilder.create(springBootParentCoordinate));
+        List<String> availableVersions = new ArrayList<>(availableCoordinates.size());
+        for (Coordinate coordinate : availableCoordinates) {
+            availableVersions.add(coordinate.getVersion());
+        }
+        return availableVersions;
     }
 
     private String selectedSpringBootVersion;
