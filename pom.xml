@@ -28,31 +28,41 @@
             <groupId>org.jboss.forge.furnace.container</groupId>
             <artifactId>cdi</artifactId>
             <classifier>forge-addon</classifier>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.forge.addon</groupId>
             <artifactId>projects</artifactId>
             <classifier>forge-addon</classifier>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.forge.addon</groupId>
             <artifactId>javaee</artifactId>
             <classifier>forge-addon</classifier>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.forge.addon</groupId>
             <artifactId>parser-java</artifactId>
             <classifier>forge-addon</classifier>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.forge.addon</groupId>
             <artifactId>ui</artifactId>
             <classifier>forge-addon</classifier>
-            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.forge.addon</groupId>
+            <artifactId>scaffold</artifactId>
+            <classifier>forge-addon</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.forge.addon</groupId>
+            <artifactId>maven</artifactId>
+            <classifier>forge-addon</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.forge.addon</groupId>
+            <artifactId>templates</artifactId>
+            <classifier>forge-addon</classifier>
         </dependency>
         <dependency>
             <groupId>org.jboss.forge.furnace.test</groupId>
@@ -60,14 +70,15 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.forge.furnace.test</groupId>
-            <artifactId>arquillian-furnace-classpath</artifactId>
+            <groupId>org.jboss.forge.addon</groupId>
+            <artifactId>ui-test-harness</artifactId>
+            <classifier>forge-addon</classifier>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.forge.addon</groupId>
-            <artifactId>core</artifactId>
-            <classifier>forge-addon</classifier>
+            <groupId>org.jboss.forge.furnace.test</groupId>
+            <artifactId>arquillian-furnace-classpath</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
