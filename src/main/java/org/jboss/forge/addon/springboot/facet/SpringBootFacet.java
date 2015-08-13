@@ -8,6 +8,10 @@ import org.jboss.forge.addon.maven.projects.MavenFacet;
 import org.jboss.forge.addon.projects.Project;
 import org.jboss.forge.addon.projects.ProjectFacet;
 import org.jboss.forge.addon.projects.dependencies.DependencyInstaller;
+import org.jboss.forge.addon.projects.facets.DependencyFacet;
+import org.jboss.forge.addon.springboot.spring.SpringBootMetadataRetriever;
+
+import static org.jboss.forge.addon.springboot.spring.SpringBootMetadataRetriever.*;
 
 import javax.inject.Inject;
 
@@ -19,30 +23,52 @@ public class SpringBootFacet extends AbstractFacet<Project> implements ProjectFa
     @Inject
     private DependencyInstaller dependencyInstaller;
 
+    @Inject
+    private SpringBootMetadataRetriever metadataRetriever;
 
     @Override
     public boolean install() {
+        if (metadataRetriever.getSelectedSpringBootVersion() == null) {
+            throw new IllegalStateException(
+                    "First set the Spring Boot version before installing the facet.");
+        }
 
-        Project project = getFaceted();
-        MavenFacet maven = project.getFacet(MavenFacet.class);
         Parent parent = new Parent();
+        parent.setGroupId(SPRING_BOOT_GROUP_ID);
+        parent.setArtifactId(SPRING_BOOT_PARENT_ARTIFACT_ID);
+        parent.setVersion(metadataRetriever.getSelectedSpringBootVersion());
 
-        parent.setGroupId("org.springframework.boot");
-        parent.setArtifactId("spring-boot-starter-parent");
-        parent.setVersion("1.2.5.RELEASE");
-
+        MavenFacet maven = getFaceted().getFacet(MavenFacet.class);
         Model model = maven.getModel();
         model.setParent(parent);
-
         maven.setModel(model);
 
-        dependencyInstaller.install(project, DependencyBuilder.create("org.springframework.boot:spring-boot-starter-web"));
+        dependencyInstaller.install(getFaceted(), getStarterWebDependency());
 
         return true;
     }
 
     @Override
     public boolean isInstalled() {
-        return false;
+        MavenFacet maven = getFaceted().getFacet(MavenFacet.class);
+        return isParentSpringBoot(maven.getModel().getParent()) && hasSpringBootWebStarterDependency();
     }
+
+    private boolean isParentSpringBoot(Parent parent) {
+        return parent != null && parent.getGroupId().equals(SPRING_BOOT_GROUP_ID) &&
+                parent.getArtifactId().equals(SPRING_BOOT_PARENT_ARTIFACT_ID);
+    }
+
+    private boolean hasSpringBootWebStarterDependency() {
+        return getFaceted().getFacet(DependencyFacet.class).getDirectDependency(
+                getStarterWebDependency()) != null;
+    }
+
+    private DependencyBuilder getStarterWebDependency() {
+        return DependencyBuilder
+                    .create()
+                    .setGroupId(SPRING_BOOT_GROUP_ID)
+                    .setArtifactId(SPRING_BOOT_STARTER_WEB_ARTIFACT_ID);
+    }
+
 }
