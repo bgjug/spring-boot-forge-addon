@@ -6,11 +6,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>User</title>
+<title>${entityName}</title>
 </head>
 <body>
-	<h1>User</h1>
-	<form:form modelAttribute="user" method="post" action="/user/user-save" >
+	<h1>${entityName}</h1>
+	<form:form modelAttribute="${entity}" method="post" action="/${entity}/${entity}-save" >
 		<p><form:errors /></p>
 
 		<dl>

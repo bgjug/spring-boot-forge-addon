@@ -5,12 +5,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>User list</title>
+<title>${entityName} list</title>
 </head>
 
 <body>
-	<h1>User list</h1>
-	<span><a href="/user/user-add"> Add user </a></span>
+	<h1>${entityName} list</h1>
+	<span><a href="/${entity}/${entity}-add"> Add ${entityName} </a></span>
 	<table>
 		<thead>
 			<tr>
@@ -21,25 +21,25 @@
 			</tr>
 		</thead>
 		<tbody>
-			<c:forEach var="user" items="${r"${users}"}">
+			<c:forEach var="item" items="${r"${items}"}">
 				<tr>
-					<td>${r"${user.id}"}</td>
-					<td>${r"${user.firstName}"}</td>
-					<td>${r"${user.lastName}"}</td>
+					<td>${r"${item.id}"}</td>
+					<td>${r"${item.firstName}"}</td>
+					<td>${r"${item.lastName}"}</td>
 					<td>
-						<span><a href="/user/user-edit/${r"${user.id}"}">Edit</a></span> &nbsp;
+						<span><a href="/${entity}/${entity}-edit/${r"${item.id}"}">Edit</a></span> &nbsp;
 
-						<span><a href="/user/user-remove/${r"${user.id}"}"> Remove </a></span>
+						<span><a href="/${entity}/${entity}-remove/${r"${item.id}"}"> Remove </a></span>
 					</td>
 				</tr>
 			</c:forEach>
 			</tbody>
 	</table>
 	<c:if test="${r"${hasPrevious}"}">
-		<span><a href="/user/user-list?page=${r"${currentPage-1}"}">previous</a></span>
+		<span><a href="/${entity}/${entity}-list?page=${r"${currentPage-1}"}">previous</a></span>
 	</c:if>
 	<c:if test="${r"${hasNext}"}">
-		<span><a href="/user/user-list?page=${r"${currentPage+1}"}">next</a></span>
+		<span><a href="/${entity}/${entity}-list?page=${r"${currentPage+1}"}">next</a></span>
 	</c:if>
 </body>
 

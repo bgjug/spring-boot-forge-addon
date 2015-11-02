@@ -46,7 +46,10 @@ public class SpringBootJPAFacetImpl extends AbstractFacet<Project> implements
 			DependencyBuilder.create("org.springframework.data").setArtifactId(
 					"spring-data-jpa"),
 			DependencyBuilder.create("org.hibernate").setArtifactId(
-					"hibernate-entitymanager") };
+					"hibernate-entitymanager"),
+			//TODO wizard needs to be updated to show sql provider, use h2 for now by default
+			DependencyBuilder.create("com.h2database").setArtifactId(
+					"h2") };
 
 	@Override
 	public boolean install() {

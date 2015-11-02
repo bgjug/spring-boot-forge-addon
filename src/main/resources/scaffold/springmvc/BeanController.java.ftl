@@ -1,10 +1,10 @@
-package org.delme.controller;
+package ${controllerPackage};
 
 import javax.transaction.Transactional;
 import javax.validation.Valid;
 
-import org.delme.model.User;
-import org.delme.repository.UserRepository;
+import ${entityPackage}.${entityName};
+import ${repositoryPackage}.${entityName}Repository;
 import org.hibernate.service.spi.InjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,56 +17,56 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 @Controller
-@RequestMapping(value = "/user")
-public class UserController {
+@RequestMapping(value = "/${entity}")
+public class ${entityName}Controller {
 	
 	@Autowired
-	private UserRepository userRepository;
+	private ${entityName}Repository ${entity}Repository;
 	
-	@RequestMapping(value = "/user-list", method = RequestMethod.GET)
+	@RequestMapping(value = "/${entity}-list", method = RequestMethod.GET)
 	public String view(Model model, Pageable pageable){
-		Page<User> users = getUserRepository().findAll(pageable);
-		model.addAttribute("users", users.getContent());
-		model.addAttribute("hasPrevious", users.getNumber() > 0);
-		model.addAttribute("hasNext", users.getNumber() < users.getTotalPages() - 1);
-		model.addAttribute("currentPage", users.getNumber());
-		return "/user/user-list.jsp";
+		Page<${entityName}> ${entity}s = get${entityName}Repository().findAll(pageable);
+		model.addAttribute("items", ${entity}s.getContent());
+		model.addAttribute("hasPrevious", ${entity}s.getNumber() > 0);
+		model.addAttribute("hasNext", ${entity}s.getNumber() < ${entity}s.getTotalPages() - 1);
+		model.addAttribute("currentPage", ${entity}s.getNumber());
+		return "/${entity}/${entity}-list.jsp";
 	}
 	
-	@RequestMapping(value = "/user-save", method = RequestMethod.POST)
-	public String add(@Valid final User user, BindingResult bindingResult){
+	@RequestMapping(value = "/${entity}-save", method = RequestMethod.POST)
+	public String add(@Valid final ${entityName} ${entity}, BindingResult bindingResult){
 		if(bindingResult.hasErrors()){
-			return "/user/user-form.jsp";
+			return "/${entity}/${entity}-form.jsp";
 		}
 		
-		this.getUserRepository().save(user);
-		return "redirect:/user/user-list";
+		this.get${entityName}Repository().save(${entity});
+		return "redirect:/${entity}/${entity}-list";
 	}
 	
-	@RequestMapping(value = "/user-add", method = RequestMethod.GET)
+	@RequestMapping(value = "/${entity}-add", method = RequestMethod.GET)
 	public String edit(Model model){
-		model.addAttribute("user", new User());
-		return "/user/user-form.jsp";
+		model.addAttribute("${entity}", new ${entityName}());
+		return "/${entity}/${entity}-form.jsp";
 	}
 	
-	@RequestMapping(value = "/user-edit/{itemId}", method = RequestMethod.GET)
+	@RequestMapping(value = "/${entity}-edit/{itemId}", method = RequestMethod.GET)
 	public String edit(@PathVariable("itemId") Long itemId, Model model){
-		User user = getUserRepository().findOne(itemId);
-		model.addAttribute("user", user);
-		return "/user/user-form.jsp";
+		${entityName} ${entity} = get${entityName}Repository().findOne(itemId);
+		model.addAttribute("${entity}", ${entity});
+		return "/${entity}/${entity}-form.jsp";
 	}
 	
-	@RequestMapping(value = "/user-remove/{id}", method = RequestMethod.GET)
+	@RequestMapping(value = "/${entity}-remove/{id}", method = RequestMethod.GET)
 	public String remove(@PathVariable("id") Long id, Model model) {
-        getUserRepository().delete(id);
-        return "redirect:/user/user-list";
+        get${entityName}Repository().delete(id);
+        return "redirect:/${entity}/${entity}-list";
 	}
 
-	public UserRepository getUserRepository() {
-		return userRepository;
+	public ${entityName}Repository get${entityName}Repository() {
+		return ${entity}Repository;
 	}
 
-	public void setUserRepository(UserRepository userRepository) {
-		this.userRepository = userRepository;
+	public void set${entityName}Repository(${entityName}Repository ${entity}Repository) {
+		this.${entity}Repository = ${entity}Repository;
 	}
 }

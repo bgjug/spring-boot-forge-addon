@@ -155,11 +155,13 @@ public class SpringMvcScaffoldProvider implements ScaffoldProvider
          }
 
          JavaClassSource entity = (JavaClassSource) javaSource;
+         //TODO check that entity has repository generated IF not generate it using spring-boot-repository
+         //FIXME for now we expect there is a repository generated
          String targetDir = generationContext.getTargetDirectory();
          targetDir = (targetDir == null) ? "" : targetDir;
          config.setProperty(SpringMvcScaffoldProvider.class.getName() + "_targetDir", targetDir);
-         Resource<?> template = (Resource<?>) generationContext.getAttribute("pageTemplate");
-         List<Resource<?>> generatedResourcesForEntity = this.generateFromEntity(targetDir, template, entity);
+         String repositoryPackage = (String) generationContext.getAttribute("repositoryPackage");
+         List<Resource<?>> generatedResourcesForEntity = this.generateFromEntity(targetDir, repositoryPackage, entity);
 //
 //         // TODO give plugins a chance to react to generated resources, use event bus?
 //         // if (!generatedResources.isEmpty())
@@ -242,8 +244,8 @@ public class SpringMvcScaffoldProvider implements ScaffoldProvider
 //
 //   
 //
-   private List<Resource<?>> generateFromEntity(String targetDir, final Resource<?> template,
-            final JavaClassSource entity)
+   private List<Resource<?>> generateFromEntity(String targetDir, final String repositoryPackage,
+            final JavaClassSource entityClass)
    {
 //      resetMetaWidgets();
 //
@@ -258,9 +260,16 @@ public class SpringMvcScaffoldProvider implements ScaffoldProvider
 //
          loadTemplates();
          Map<Object, Object> context = new HashMap<Object, Object>();
+         context.put("entityClass", entityClass);
+         String entity = decapitalize(entityClass.getName()); 
          context.put("entity", entity);
-         String ccEntity = decapitalize(entity.getName());
-         context.put("ccEntity", ccEntity);
+         context.put("entityName",entityClass.getName());
+         
+         //controller specific variables
+         context.put("repositoryPackage", repositoryPackage);
+         context.put("controllerPackage", java.getBasePackage() + "." + "controller");
+         context.put("entityPackage", entityClass.getPackage());
+         
 //         context.put("rmEntity", ccEntity + "ToDelete");
 //         setPrimaryKeyMetaData(context, entity);
 //
@@ -312,11 +321,11 @@ public class SpringMvcScaffoldProvider implements ScaffoldProvider
 //         writeEntityMetawidget(context, this.createTemplateEntityMetawidgetIndent, this.createTemplateNamespaces);
 //
          result.add(ScaffoldUtil.createOrOverwrite(
-                  web.getWebResource(targetDir + "/" + ccEntity + "/" + ccEntity + "-form.jsp"),
+                  web.getWebResource(targetDir + "/" + entity + "/" + entity + "-form.jsp"),
                   this.templateProcessor.processTemplate(context, this.formJspTemplate)));
          
          result.add(ScaffoldUtil.createOrOverwrite(
-                 web.getWebResource(targetDir + "/" + ccEntity + "/" + ccEntity + "-list.jsp"),
+                 web.getWebResource(targetDir + "/" + entity + "/" + entity + "-list.jsp"),
                  this.templateProcessor.processTemplate(context, this.listJspTemplate)));
 //
 //         // Generate view

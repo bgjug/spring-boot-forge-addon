@@ -7,6 +7,7 @@ import javax.inject.Inject;
 
 import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.javaee.jpa.JPAFacet;
+import org.jboss.forge.addon.parser.java.converters.PackageRootConverter;
 import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
 import org.jboss.forge.addon.projects.Project;
 import org.jboss.forge.addon.projects.ProjectFactory;
@@ -23,6 +24,8 @@ import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UINavigationContext;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
+import org.jboss.forge.addon.ui.facets.HintsFacet;
+import org.jboss.forge.addon.ui.hints.InputType;
 import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UISelectMany;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
@@ -31,24 +34,26 @@ import org.jboss.forge.addon.ui.result.NavigationResult;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.util.Metadata;
 import org.jboss.forge.addon.ui.wizard.UIWizardStep;
+import org.jboss.forge.roaster.model.JavaPackageInfo;
 import org.jboss.forge.roaster.model.source.FieldSource;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
+import org.jboss.forge.roaster.model.source.JavaPackageInfoSource;
 import org.jboss.forge.roaster.model.util.Refactory;
 import org.jboss.shrinkwrap.descriptor.api.persistence.PersistenceCommonDescriptor;
 
 public class ScaffoldableEntitySelectionWizard implements UIWizardStep
 {
    @Inject
-   @WithAttributes(label = "Facelet Template", description = "The Facelets template file to be used in the generated facelets.")
-   private UIInput<FileResource<?>> pageTemplate;
+   @WithAttributes(label = "Repository Package", description = "Spring Boot use Repository Pattern used in the controller to fetch entites")
+   private UIInput<String> repositoryPackage;
 
    @Inject
    @WithAttributes(label = "Targets", required = true, description = "The JPA entities to use as the basis for generating the scaffold.")
    private UISelectMany<JavaClassSource> targets;
 
-   @Inject
-   @WithAttributes(label = "Use custom template when generating pages", required = false, description = "Enabling this will allow the generated scaffold to use the specified Facelet template.")
-   private UIInput<Boolean> useCustomTemplate;
+//   @Inject
+//   @WithAttributes(label = "Use custom template when generating pages", required = false, description = "Enabling this will allow the generated scaffold to use the specified Facelet template.")
+//   private UIInput<Boolean> useCustomTemplate;
 
    @Inject
    @WithAttributes(label = "Generate missing .equals() and .hashCode() methods", required = false, description = "If enabled, entities missing an .equals() or .hashCode() method will be updated to provide them")
@@ -79,17 +84,17 @@ public class ScaffoldableEntitySelectionWizard implements UIWizardStep
 
       attributeMap.put(ResourceCollection.class, resourceCollection);
       ScaffoldGenerationContext genCtx = (ScaffoldGenerationContext) attributeMap.get(ScaffoldGenerationContext.class);
-      if (uiContext.getProvider().isGUI())
-      {
-         if (useCustomTemplate.getValue())
-         {
-            genCtx.addAttribute("pageTemplate", pageTemplate.getValue());
-         }
-      }
-      else
-      {
-         genCtx.addAttribute("pageTemplate", pageTemplate.getValue());
-      }
+//      if (uiContext.getProvider().isGUI())
+//      {
+//         if (useCustomTemplate.getValue())
+//         {
+//            genCtx.addAttribute("pageTemplate", repositoryPackage.getValue());
+//         }
+//      }
+//      else
+//      {
+         genCtx.addAttribute("repositoryPackage", repositoryPackage.getValue());
+//      }
       return null;
    }
 
@@ -125,23 +130,26 @@ public class ScaffoldableEntitySelectionWizard implements UIWizardStep
       });
 
       builder.add(targets);
-      if (uiContext.getProvider().isGUI())
-      {
-         useCustomTemplate.setDefaultValue(false);
-         pageTemplate.setEnabled(new Callable<Boolean>()
-         {
-            @Override
-            public Boolean call() throws Exception
-            {
-               return useCustomTemplate.getValue();
-            }
-         });
-         builder.add(useCustomTemplate).add(pageTemplate);
-      }
-      else
-      {
-         builder.add(pageTemplate);
-      }
+//      if (uiContext.getProvider().isGUI())
+//      {
+         repositoryPackage.getFacet(HintsFacet.class).setInputType(InputType.JAVA_PACKAGE_PICKER);
+         repositoryPackage.setValueConverter(new PackageRootConverter(projectFactory, builder));
+         repositoryPackage.setDefaultValue(project.getFacet(JavaSourceFacet.class).getBasePackage() + ".repository");
+//         repositoryPackage.setEnabled(new Callable<Boolean>()
+//         {
+//            @Override
+//            public Boolean call() throws Exception
+//            {
+//               return useCustomTemplate.getValue();
+//            }
+//         });
+//         builder.add(useCustomTemplate).add(repositoryPackage);
+         builder.add(repositoryPackage);
+//      }
+//      else
+//      {
+//         builder.add(repositoryPackage);
+//      }
       generateEqualsAndHashCode.setEnabled(new Callable<Boolean>()
       {
          @Override
@@ -208,52 +216,52 @@ public class ScaffoldableEntitySelectionWizard implements UIWizardStep
    @Override
    public void validate(UIValidationContext context)
    {
-      UIContext uiContext = context.getUIContext();
-      if (uiContext.getProvider().isGUI())
-      {
-         boolean useTemplate = useCustomTemplate.getValue();
-         if (useTemplate)
-         {
-            validateTemplate(context);
-         }
-      }
-      else
-      {
-         validateTemplate(context);
-      }
+//      UIContext uiContext = context.getUIContext();
+//      if (uiContext.getProvider().isGUI())
+//      {
+////         boolean useTemplate = useCustomTemplate.getValue();
+////         if (useTemplate)
+////         {
+//            validateTemplate(context);
+//         }
+//      }
+//      else
+//      {
+//         validateTemplate(context);
+//      }
    }
 
-   private void validateTemplate(UIValidationContext context)
-   {
-      Resource<?> template = pageTemplate.getValue();
-      if (template != null)
-      {
-         if (template.exists())
-         {
-            Map<Object, Object> attributeMap = context.getUIContext().getAttributeMap();
-            Project project = (Project) attributeMap.get(Project.class);
-            WebResourcesFacet web = project.getFacet(WebResourcesFacet.class);
-            boolean isValidTemplate = false;
-            for (DirectoryResource dir : web.getWebRootDirectories())
-            {
-               if (ResourceUtil.isChildOf(dir, template))
-               {
-                  isValidTemplate = true;
-               }
-            }
-            if (!isValidTemplate)
-            {
-               context.addValidationError(pageTemplate, "Not a valid template resource. "
-                        + "The template should be located under a web root directory for the project.");
-            }
-         }
-         else
-         {
-            context.addValidationError(pageTemplate, "The template [" + template.getName()
-                     + "] does not exist. You must select a template that exists.");
-         }
-      }
-   }
+//   private void validateTemplate(UIValidationContext context)
+//   {
+//      Resource<?> template = repositoryPackage.getValue();
+//      if (template != null)
+//      {
+//         if (template.exists())
+//         {
+//            Map<Object, Object> attributeMap = context.getUIContext().getAttributeMap();
+//            Project project = (Project) attributeMap.get(Project.class);
+//            WebResourcesFacet web = project.getFacet(WebResourcesFacet.class);
+//            boolean isValidTemplate = false;
+//            for (DirectoryResource dir : web.getWebRootDirectories())
+//            {
+//               if (ResourceUtil.isChildOf(dir, template))
+//               {
+//                  isValidTemplate = true;
+//               }
+//            }
+//            if (!isValidTemplate)
+//            {
+//               context.addValidationError(repositoryPackage, "Not a valid template resource. "
+//                        + "The template should be located under a web root directory for the project.");
+//            }
+//         }
+//         else
+//         {
+//            context.addValidationError(repositoryPackage, "The template [" + template.getName()
+//                     + "] does not exist. You must select a template that exists.");
+//         }
+//      }
+//   }
 
    private Project getSelectedProject(UIContext uiContext)
    {
