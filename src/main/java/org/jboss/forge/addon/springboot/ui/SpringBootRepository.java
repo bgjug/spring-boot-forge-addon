@@ -1,19 +1,12 @@
 package org.jboss.forge.addon.springboot.ui;
 
-import java.io.FileNotFoundException;
-
-import javax.inject.Inject;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-
 import org.jboss.forge.addon.facets.constraints.FacetConstraint;
 import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
 import org.jboss.forge.addon.parser.java.resources.JavaResource;
 import org.jboss.forge.addon.parser.java.ui.AbstractJavaSourceCommand;
 import org.jboss.forge.addon.projects.Project;
 import org.jboss.forge.addon.projects.ProjectFactory;
+import org.jboss.forge.addon.springboot.facet.SpringBootFacet;
 import org.jboss.forge.addon.springboot.facet.SpringBootJPAFacetImpl;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
@@ -26,13 +19,14 @@ import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.Result;
-import org.jboss.forge.addon.ui.result.Results;
 import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
-import org.jboss.forge.roaster.model.Type;
-import org.jboss.forge.roaster.model.source.FieldSource;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
+
+import javax.inject.Inject;
+import javax.persistence.Entity;
+import java.io.FileNotFoundException;
 
 @FacetConstraint(SpringBootJPAFacetImpl.class)
 public class SpringBootRepository extends
@@ -105,67 +99,20 @@ public class SpringBootRepository extends
 		}
 	}
 
-	private String entytPkQualifiedName = null;
-	private String simplePkName = null;
-
 	@Override
 	public Result execute(UIExecutionContext context) throws Exception {
-		JavaClassSource entityClass = ((JavaResource) repositoryEntity
-				.getValue()).getJavaType();
-
-		entytPkQualifiedName = null;
-		simplePkName = null;
-		if (entityClass.hasAnnotation(IdClass.class)) {
-			// AnnotationSource<JavaClassSource> idClassAnotation = entityClass
-			// .getAnnotation(IdClass.class);
-			// String valueClassName = idClassAnotation.getLiteralValue();
-
-			Results.success("Entites with IdClass primary key are not supported!");
-		} else {
-			for (FieldSource<JavaClassSource> field : entityClass.getFields()) {
-				if (field.hasAnnotation(Id.class)
-						|| field.hasAnnotation(EmbeddedId.class)) {
-					Type<JavaClassSource> fieldType = field.getType();
-
-					entytPkQualifiedName = fieldType.getQualifiedName();
-					simplePkName = fieldType.getSimpleName();
-
-					break;
-				}
-			}
-		}
-
-		if (entytPkQualifiedName == null) {
-			Results.fail("Unable to detect entity primary key class type!");
-		}
-
 		return super.execute(context);
 	}
 
 	@Override
 	public JavaInterfaceSource decorateSource(UIExecutionContext context,
 			Project project, JavaInterfaceSource source) throws Exception {
-
 		JavaClassSource entityClass = ((JavaResource) repositoryEntity
 				.getValue()).getJavaType();
 
-		switch (repositoryType.getValue()) {
-		case CRUD:
-			source.addImport("org.springframework.data.repository.CrudRepository");
-			source.addInterface("CrudRepository<" + entityClass.getName() + ","
-					+ simplePkName + ">");
-			break;
-		case PAGING_AND_SORTING:
-			source.addImport("org.springframework.data.repository.PagingAndSortingRepository");
-			source.addInterface("PagingAndSortingRepository<"
-					+ entityClass.getName() + "," + simplePkName + ">");
-			break;
-		}
+		SpringBootFacet facet = project.getFacet(SpringBootFacet.class);
 
-		source.addImport(entytPkQualifiedName);
-		source.addImport(entityClass.getQualifiedName());
-
-		return super.decorateSource(context, project, source);
+		return facet.exportRepositoryForEntity(source, entityClass, repositoryType.getValue());
 	}
 
 	@Inject

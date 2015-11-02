@@ -10,10 +10,19 @@ import org.jboss.forge.addon.projects.ProjectFacet;
 import org.jboss.forge.addon.projects.dependencies.DependencyInstaller;
 import org.jboss.forge.addon.projects.facets.DependencyFacet;
 import org.jboss.forge.addon.springboot.spring.SpringBootMetadataRetriever;
+import org.jboss.forge.addon.springboot.ui.SpringBootRepositoryType;
+import org.jboss.forge.addon.ui.result.Results;
+import org.jboss.forge.roaster.model.Type;
+import org.jboss.forge.roaster.model.source.FieldSource;
+import org.jboss.forge.roaster.model.source.JavaClassSource;
+import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
 
 import static org.jboss.forge.addon.springboot.spring.SpringBootMetadataRetriever.*;
 
 import javax.inject.Inject;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Id;
+import javax.persistence.IdClass;
 
 /**
  * @author <a href="ivan.st.ivanov@gmail.com">Ivan St. Ivanov</a>
@@ -69,6 +78,53 @@ public class SpringBootFacet extends AbstractFacet<Project> implements ProjectFa
                     .create()
                     .setGroupId(SPRING_BOOT_GROUP_ID)
                     .setArtifactId(SPRING_BOOT_STARTER_WEB_ARTIFACT_ID);
+    }
+
+    public JavaInterfaceSource exportRepositoryForEntity(JavaInterfaceSource source,
+            JavaClassSource entityClass, SpringBootRepositoryType repositoryType) {
+        String entytPkQualifiedName = null;
+        String simplePkName = null;
+        if (entityClass.hasAnnotation(IdClass.class)) {
+            // AnnotationSource<JavaClassSource> idClassAnotation = entityClass
+            // .getAnnotation(IdClass.class);
+            // String valueClassName = idClassAnotation.getLiteralValue();
+
+            Results.fail("Entites with IdClass primary key are not supported!");
+        } else {
+            for (FieldSource<JavaClassSource> field : entityClass.getFields()) {
+                if (field.hasAnnotation(Id.class)
+                        || field.hasAnnotation(EmbeddedId.class)) {
+                    Type<JavaClassSource> fieldType = field.getType();
+
+                    entytPkQualifiedName = fieldType.getQualifiedName();
+                    simplePkName = fieldType.getSimpleName();
+
+                    break;
+                }
+            }
+        }
+
+        if (entytPkQualifiedName == null) {
+            Results.fail("Unable to detect entity primary key class type!");
+        }
+
+        switch (repositoryType) {
+        case CRUD:
+            source.addImport("org.springframework.data.repository.CrudRepository");
+            source.addInterface("CrudRepository<" + entityClass.getName() + ","
+                    + simplePkName + ">");
+            break;
+        case PAGING_AND_SORTING:
+            source.addImport("org.springframework.data.repository.PagingAndSortingRepository");
+            source.addInterface("PagingAndSortingRepository<"
+                    + entityClass.getName() + "," + simplePkName + ">");
+            break;
+        }
+
+        source.addImport(entytPkQualifiedName);
+        source.addImport(entityClass.getQualifiedName());
+
+        return source;
     }
 
 }
