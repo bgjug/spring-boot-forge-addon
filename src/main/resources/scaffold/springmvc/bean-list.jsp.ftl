@@ -14,18 +14,14 @@
 	<table>
 		<thead>
 			<tr>
-				<th><i>Id</i></th>
-				<th><i>FirstName</i></th>
-				<th><i>LastName</i></th>
+				${columnHeader}
 				<th><i>Operations</i></th>
 			</tr>
 		</thead>
 		<tbody>
 			<c:forEach var="item" items="${r"${items}"}">
 				<tr>
-					<td>${r"${item.id}"}</td>
-					<td>${r"${item.firstName}"}</td>
-					<td>${r"${item.lastName}"}</td>
+					${columnData}
 					<td>
 						<span><a href="/${entity}/${entity}-edit/${r"${item.id}"}">Edit</a></span> &nbsp;
 

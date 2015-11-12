@@ -13,30 +13,8 @@
 	<form:form modelAttribute="${entity}" method="post" action="/${entity}/${entity}-save" >
 		<p><form:errors /></p>
 
-		<dl>
-			<dt>
-				<label for="id">Id</label>
-			</dt>
-			<dd>
-				<form:input path="id" readonly="true" />
-			</dd>
-		</dl>
-		<dl>
-			<dt>
-				<label for="firstName">First Name</label>
-			</dt>
-			<dd>
-				<form:input path="firstName" />
-			</dd>
-		</dl>
-		<dl>
-			<dt>
-				<label for="lastName">Last Name</label>
-			</dt>
-			<dd>
-				<form:input path="lastName" />
-			</dd>
-		</dl>
+		${formData}
+		
 		<button type="submit">Save</button>	
 	</form:form>
 </body>

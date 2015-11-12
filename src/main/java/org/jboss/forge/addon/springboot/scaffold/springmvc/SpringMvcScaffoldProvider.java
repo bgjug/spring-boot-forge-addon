@@ -11,7 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
+import javax.persistence.Id;
+import javax.persistence.Version;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.forge.addon.configuration.Configuration;
 import org.jboss.forge.addon.dependencies.Dependency;
 import org.jboss.forge.addon.dependencies.builder.DependencyBuilder;
@@ -33,8 +36,12 @@ import org.jboss.forge.addon.springboot.scaffold.springmvc.freemarker.Freemarker
 import org.jboss.forge.addon.ui.result.NavigationResult;
 import org.jboss.forge.addon.ui.result.navigation.NavigationResultBuilder;
 import org.jboss.forge.roaster.Roaster;
+import org.jboss.forge.roaster.model.Field;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.JavaSource;
+import org.jboss.forge.roaster.model.source.MemberSource;
+import org.jboss.forge.roaster.model.source.MethodSource;
+import org.jboss.forge.roaster.model.util.Types;
 
 import freemarker.template.Template;
 
@@ -271,7 +278,8 @@ public class SpringMvcScaffoldProvider implements ScaffoldProvider
          context.put("entityPackage", entityClass.getPackage());
          
 //         context.put("rmEntity", ccEntity + "ToDelete");
-//         setPrimaryKeyMetaData(context, entity);
+         setPrimaryKeyMetaData(context, entityClass);
+		 setFieldsColumnAndFormData(context, entityClass);
 //
 //         // Prepare qbeMetawidget
 //         this.qbeMetawidget.setPath(entity.getQualifiedName());
@@ -411,65 +419,100 @@ public class SpringMvcScaffoldProvider implements ScaffoldProvider
 //      }
 //   }
 //
-//   private void setPrimaryKeyMetaData(Map<Object, Object> context, final JavaClassSource entity)
-//   {
-//      String pkName = "id";
-//      String pkType = "Long";
-//      String nullablePkType = "Long";
-//      for (MemberSource<JavaClassSource, ?> m : entity.getMembers())
-//      {
-//         if (m.hasAnnotation(Id.class))
-//         {
-//            if (m instanceof Field)
-//            {
-//               Field<?> field = (Field<?>) m;
-//               pkName = field.getName();
-//               pkType = field.getType().getQualifiedName();
-//               nullablePkType = pkType;
-//               break;
-//            }
-//
-//            MethodSource<?> method = (MethodSource<?>) m;
-//            pkName = method.getName().substring(3);
-//            if (method.getName().startsWith("get"))
-//            {
-//               pkType = method.getReturnType().getQualifiedName();
-//            }
-//            else
-//            {
-//               pkType = method.getParameters().get(0).getType().getQualifiedName();
-//            }
-//            nullablePkType = pkType;
-//            break;
-//         }
-//      }
-//
-//      if (Types.isJavaLang(pkType))
-//      {
-//         nullablePkType = Types.toSimpleName(pkType);
-//      }
-//      else if ("int".equals(pkType))
-//      {
-//         nullablePkType = Integer.class.getSimpleName();
-//      }
-//      else if ("short".equals(pkType))
-//      {
-//         nullablePkType = Short.class.getSimpleName();
-//      }
-//      else if ("byte".equals(pkType))
-//      {
-//         nullablePkType = Byte.class.getSimpleName();
-//      }
-//      else if ("long".equals(pkType))
-//      {
-//         nullablePkType = Long.class.getSimpleName();
-//      }
-//
-//      context.put("primaryKey", pkName);
-//      context.put("primaryKeyCC", StringUtils.capitalize(pkName));
-//      context.put("primaryKeyType", pkType);
-//      context.put("nullablePrimaryKeyType", nullablePkType);
-//   }
+   
+   private void setFieldsColumnAndFormData(Map<Object, Object> context, final JavaClassSource entity)
+   {
+		StringBuilder columnHeader = new StringBuilder();
+		StringBuilder columnData = new StringBuilder();
+		StringBuilder formData = new StringBuilder();
+		for (MemberSource<JavaClassSource, ?> f : entity.getFields()) {
+			columnHeader.append("<th>").append(f.getName()).append("}</th>");
+			columnData.append("<td>${item.").append(f.getName())
+					.append("}</td>");
+			
+			String fieldType  = ((Field<?>)f).getType().getQualifiedName();
+			//TODO form based on type
+			if (f.hasAnnotation(Id.class)) {
+				formData.append("<dl><dt><label for=\"").append(f.getName())
+						.append("\">" + f.getName() + "</label>")
+						.append("</dt><dd>")
+						.append("<form:input path=\"" +f.getName() +"\" readonly=\"true\" />")
+						.append("</dd></dl>");
+			} else if(f.hasAnnotation(Version.class)) {
+				 //skip the version
+			} else {
+				formData.append("<dl><dt><label for=\"").append(f.getName())
+				.append("\">" + f.getName() + "</label>")
+				.append("</dt><dd>")
+				.append("<form:input path=\"" +f.getName() +"\"  />")
+				.append("</dd></dl>");
+			}
+		}
+		context.put("columnHeader", columnHeader.toString());
+		context.put("columnData", columnData.toString());
+		context.put("formData", formData.toString());
+		
+		
+   }
+   private void setPrimaryKeyMetaData(Map<Object, Object> context, final JavaClassSource entity)
+   {
+      String pkName = "id";
+      String pkType = "Long";
+      String nullablePkType = "Long";
+      for (MemberSource<JavaClassSource, ?> m : entity.getMembers())
+      {
+         if (m.hasAnnotation(Id.class))
+         {
+            if (m instanceof Field)
+            {
+               Field<?> field = (Field<?>) m;
+               pkName = field.getName();
+               pkType = field.getType().getQualifiedName();
+               nullablePkType = pkType;
+               break;
+            }
+
+            MethodSource<?> method = (MethodSource<?>) m;
+            pkName = method.getName().substring(3);
+            if (method.getName().startsWith("get"))
+            {
+               pkType = method.getReturnType().getQualifiedName();
+            }
+            else
+            {
+               pkType = method.getParameters().get(0).getType().getQualifiedName();
+            }
+            nullablePkType = pkType;
+            break;
+         }
+      }
+
+      if (Types.isJavaLang(pkType))
+      {
+         nullablePkType = Types.toSimpleName(pkType);
+      }
+      else if ("int".equals(pkType))
+      {
+         nullablePkType = Integer.class.getSimpleName();
+      }
+      else if ("short".equals(pkType))
+      {
+         nullablePkType = Short.class.getSimpleName();
+      }
+      else if ("byte".equals(pkType))
+      {
+         nullablePkType = Byte.class.getSimpleName();
+      }
+      else if ("long".equals(pkType))
+      {
+         nullablePkType = Long.class.getSimpleName();
+      }
+
+      context.put("primaryKey", pkName);
+      context.put("primaryKeyCC", StringUtils.capitalize(pkName));
+      context.put("primaryKeyType", pkType);
+      context.put("nullablePrimaryKeyType", nullablePkType);
+   }
 //
 //   @SuppressWarnings({ "rawtypes", "unchecked" })
 //   private void createErrorPageEntry(WebAppCommonDescriptor servletConfig, String errorLocation, String errorCode)
