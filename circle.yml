@@ -1,0 +1,18 @@
+machine:
+   java:
+      version: oraclejdk8
+dependencies:
+   pre:
+
+   override:
+      - mvn clean install
+test:
+   pre:
+
+   override:
+
+   post:
+#      - codecov
+#deployment:
+#   override:
+#      - curl -v -X POST https://circleci.com/api/v1/project/nemesis-software/nemesis-archetype/tree/master?circle-token=$CIRCLE_TOKEN
