@@ -5,7 +5,7 @@ dependencies:
    pre:
 
    override:
-      - mvn clean install
+      - mvn package
 test:
    pre:
 
