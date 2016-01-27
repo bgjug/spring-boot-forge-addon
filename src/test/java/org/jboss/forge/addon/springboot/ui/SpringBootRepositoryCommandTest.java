@@ -2,6 +2,7 @@ package org.jboss.forge.addon.springboot.ui;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.forge.addon.javaee.jpa.JPAFacet;
 import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
 import org.jboss.forge.addon.parser.java.resources.JavaResource;
 import org.jboss.forge.addon.projects.Project;
@@ -13,6 +14,8 @@ import org.jboss.forge.addon.springboot.facet.SpringBootJPAFacetImpl;
 import org.jboss.forge.addon.springboot.facet.SpringBootRestFacet;
 import org.jboss.forge.addon.ui.controller.CommandController;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
+import org.jboss.forge.addon.ui.result.Failed;
+import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.test.UITestHarness;
 import org.jboss.forge.arquillian.AddonDependencies;
 import org.jboss.forge.arquillian.archive.AddonArchive;
@@ -25,34 +28,27 @@ import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.jboss.forge.addon.javaee.JavaEEPackageConstants.DEFAULT_ENTITY_PACKAGE;
-import static org.jboss.forge.addon.springboot.ui.SpringBootRepository.DEFAULT_REPOSITORY_PACKAGE;
+import static org.jboss.forge.addon.springboot.ui.SpringBootRepositoryCommand.DEFAULT_REPOSITORY_PACKAGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Arquillian.class)
-public class SpringBootRepositoryTest {
+public class SpringBootRepositoryCommandTest {
 
 	@Deployment
 	@AddonDependencies
 	public static AddonArchive getDeployment() {
         return ShrinkWrap.create(AddonArchive.class)
                 .addBeansXML().addClass(ProjectHelper.class)
-                .addClass(SpringBootRepository.class)
-                .addClass(SpringBootSetupCommand.class)
-                .addClass(SpringBootSetupJPACommand.class)
-                .addClass(SpringBootJPAFacetImpl.class)
-                .addClass(SpringBootRestFacet.class)
-                .addClass(SpringBootFacet.class)
-                .addClass(SpringBootDescriptor.class)
-                .addClass(SpringBootPropertiesDescriptor.class)
-                .addClass(SpringBootSetupRestCommand.class)
-                .addClass(SpringBootRepositoryType.class);
+                .addClass(SpringBootRepositoryCommandTest.class);
 	}
 
 	private Project project;
@@ -70,16 +66,16 @@ public class SpringBootRepositoryTest {
 	public void setUp() throws IOException {
 		project = projectHelper.createSpringBootProject();
 		projectHelper.createJPAEntity(project, "Customer");
-	}
+    }
 
 	@Test
 	public void checkCommandMetadata() throws Exception {
 		try (CommandController controller = uiTestHarness
-				.createCommandController(SpringBootRepository.class,
+				.createCommandController(SpringBootRepositoryCommand.class,
 						project.getRoot())) {
 			controller.initialize();
 			// Checks the command metadata
-			assertTrue(controller.getCommand() instanceof SpringBootRepository);
+			assertTrue(controller.getCommand() instanceof SpringBootRepositoryCommand);
 			UICommandMetadata metadata = controller.getMetadata();
 			assertEquals("Spring Boot: Repository", metadata.getName());
 			assertEquals("Spring", metadata.getCategory().getName());
@@ -97,7 +93,7 @@ public class SpringBootRepositoryTest {
     @Test
     public void testRepositoryCommandWithCrudRepository() throws Exception {
         try (CommandController controller = uiTestHarness
-                .createCommandController(SpringBootRepository.class,
+                .createCommandController(SpringBootRepositoryCommand.class,
                         project.getRoot())) {
             controller.initialize();
             String basePackageName = project.getFacet(JavaSourceFacet.class)
@@ -137,7 +133,7 @@ public class SpringBootRepositoryTest {
 				+ DEFAULT_ENTITY_PACKAGE;
 		String repositoryPackageName = basePackageName + DEFAULT_REPOSITORY_PACKAGE;
         try (CommandController controller = uiTestHarness
-                .createCommandController(SpringBootRepository.class,
+                .createCommandController(SpringBootRepositoryCommand.class,
                         project.getRoot())) {
             controller.initialize();
             controller.setValueFor("repositoryEntity", entityPackageName + ".Customer");
@@ -158,5 +154,36 @@ public class SpringBootRepositoryTest {
             String interfaceName = intf.getInterfaces().get(0);
             assertEquals("org.springframework.data.repository.PagingAndSortingRepository", interfaceName);
         }
+    }
+
+    @Test
+    public void testShell() throws Exception {
+        String baseBackageName = project.getFacet(JavaSourceFacet.class)
+                    .getBasePackage();
+        String entityPackageName = baseBackageName + "."
+                + DEFAULT_ENTITY_PACKAGE;
+        String repositoryPackageName = baseBackageName
+        				+ DEFAULT_REPOSITORY_PACKAGE;
+        shellTest.getShell().setCurrentResource(project.getRoot());
+        Result result = shellTest.execute("spring-boot-repository --repositoryEntity "
+                    + entityPackageName
+                    + ".Customer --named CustomerRepository --targetPackage "
+                    + repositoryPackageName + " --repositoryType " + SpringBootRepositoryType.CRUD.toString(),
+                10, TimeUnit.SECONDS);
+        assertThat(result, not(instanceOf(Failed.class)));
+        assertTrue(project.hasFacet(JPAFacet.class));
+
+        JavaSourceFacet facet = project.getFacet(JavaSourceFacet.class);
+        JavaResource repositoryResuource = facet
+        				.getJavaResource(repositoryPackageName + ".CustomerRepository");
+        assertNotNull(repositoryResuource);
+        assertThat(repositoryResuource.getJavaType(),
+                is(instanceOf(JavaInterface.class)));
+
+        JavaInterfaceSource intf = repositoryResuource
+                .getJavaType();
+        assertEquals(intf.getInterfaces().size(), 1);
+        String interfaceName = intf.getInterfaces().get(0);
+        assertEquals(interfaceName, "CrudRepository<Customer, int>");
     }
 }

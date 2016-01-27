@@ -41,8 +41,8 @@ import org.jboss.forge.roaster.model.source.FieldSource;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
  
-@FacetConstraint(SpringBootRestFacet.class)
-public class SpringBootRepository extends
+//@FacetConstraint(SpringBootRestFacet.class)
+public class SpringBootRepositoryCommand extends
 		AbstractJavaSourceCommand<JavaInterfaceSource> {
 
 	public static final String DEFAULT_REPOSITORY_PACKAGE = ".repository";
@@ -57,7 +57,7 @@ public class SpringBootRepository extends
 
 	@Override
 	public UICommandMetadata getMetadata(UIContext context) {
-		return Metadata.forCommand(SpringBootRepository.class)
+		return Metadata.forCommand(SpringBootRepositoryCommand.class)
 				.name("Spring Boot: Repository")
 				.category(Categories.create("Spring", "Boot"));
 	}
@@ -233,14 +233,14 @@ public class SpringBootRepository extends
 	private String entityPkQualifiedName = null;
 	private String simplePkName = null;
 
-//	@Override
-//	public Result execute(UIExecutionContext context) throws Exception {
-//		if (entityPkQualifiedName == null) {
-//			Results.fail("Unable to detect entity primary key class type!");
-//		}
-//
-//		return super.execute(context);
-//	}
+	@Override
+	public Result execute(UIExecutionContext context) throws Exception {
+		if (entityPkQualifiedName == null) {
+			Results.fail("Unable to detect entity primary key class type!");
+		}
+
+		return super.execute(context);
+	}
 
 	@Override
 	public JavaInterfaceSource decorateSource(UIExecutionContext context,
