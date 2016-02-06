@@ -53,14 +53,10 @@ public class SpringBootJPAFacetImpl extends AbstractFacet<Project> implements
 
 	@Override
 	public boolean install() {
-		installDependencies();
-		return true;
-	}
-
-	private void installDependencies() {
 		for (Dependency dependency : DEPENDENCIES) {
 			dependencyInstaller.install(getFaceted(), dependency);
 		}
+		return true;
 	}
 
 	@Override

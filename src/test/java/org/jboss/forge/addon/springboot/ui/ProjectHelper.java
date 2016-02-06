@@ -18,44 +18,57 @@ import org.jboss.forge.addon.springboot.facet.SpringBootFacet;
 import org.jboss.forge.addon.springboot.facet.SpringBootJPAFacetImpl;
 import org.jboss.forge.addon.springboot.facet.SpringBootRestFacet;
 import org.jboss.forge.addon.springboot.spring.SpringBootMetadataRetriever;
+import org.jboss.forge.roaster.Roaster;
+import org.jboss.forge.roaster.model.source.JavaClassSource;
 
 public class ProjectHelper {
 
-	@Inject
-	private PersistenceOperations persistenceOperations;
+    @Inject
+    private PersistenceOperations persistenceOperations;
 
-	@Inject
-	private FacetFactory facetFactory;
+    @Inject
+    private FacetFactory facetFactory;
 
-	@Inject
-	private ProjectFactory projectFactory;
+    @Inject
+    private ProjectFactory projectFactory;
 
-	@Inject
-	private SpringBootMetadataRetriever retriever;
+    @Inject
+    private SpringBootMetadataRetriever retriever;
 
-	@Inject
-	protected JavaWebProjectType javaWebProjectType;
+    @Inject
+    protected JavaWebProjectType javaWebProjectType;
 
-	public JavaResource createJPAEntity(Project project, String entityName)
-			throws IOException {
-		String packageName = project.getFacet(JavaSourceFacet.class)
-				.getBasePackage() + "." + DEFAULT_ENTITY_PACKAGE;
-		return persistenceOperations.newEntity(project, entityName,
-				packageName, GenerationType.AUTO);
-	}
+    public JavaResource createEmptyJavaClass(Project project, String packageName,
+            String className) {
+        final JavaSourceFacet javaSourceFacet = project.getFacet(JavaSourceFacet.class);
 
-	public Project createSpringBootProject() {
-		Project project = projectFactory.createTempProject(javaWebProjectType
-				.getRequiredFacets());
-		retriever.setSelectedSpringBootVersion("1.2.5.RELEASE");
+        final JavaClassSource javaClassSource = Roaster.create(JavaClassSource.class)
+                .setName(className)
+                .setPackage(packageName)
+                .setPublic();
+        return javaSourceFacet.saveJavaSource(javaClassSource);
+    }
 
-		facetFactory.install(project, SpringBootFacet.class);
-		facetFactory.install(project, SpringBootJPAFacetImpl.class);
-		facetFactory.install(project, SpringBootRestFacet.class);
-		return project;
-	}
-	
-	public void addSpringRestFacet(Project project) {
-		facetFactory.install(project, SpringBootRestFacet.class);
-	}
+    public JavaResource createJPAEntity(Project project, String entityName)
+            throws IOException {
+        String packageName = project.getFacet(JavaSourceFacet.class)
+                .getBasePackage() + "." + DEFAULT_ENTITY_PACKAGE;
+        return persistenceOperations.newEntity(project, entityName,
+                packageName, GenerationType.AUTO);
+    }
+
+    public Project createSpringBootProject() {
+        Project project = projectFactory.createTempProject(javaWebProjectType
+                .getRequiredFacets());
+        retriever.setSelectedSpringBootVersion("1.2.5.RELEASE");
+
+        facetFactory.install(project, SpringBootFacet.class);
+        facetFactory.install(project, SpringBootJPAFacetImpl.class);
+        facetFactory.install(project, SpringBootRestFacet.class);
+        return project;
+    }
+
+    public void addSpringRestFacet(Project project) {
+        facetFactory.install(project, SpringBootRestFacet.class);
+    }
 }

@@ -17,17 +17,22 @@ import org.jboss.forge.roaster.model.source.FieldSource;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
 import org.jboss.forge.roaster.model.source.JavaInterfaceSource;
 
-import static org.jboss.forge.addon.springboot.spring.SpringBootMetadataRetriever.*;
-
 import javax.inject.Inject;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 
+import static org.jboss.forge.addon.springboot.spring.SpringBootMetadataRetriever.SPRING_BOOT_GROUP_ID;
+import static org.jboss.forge.addon.springboot.spring.SpringBootMetadataRetriever.SPRING_BOOT_PARENT_ARTIFACT_ID;
+import static org.jboss.forge.addon.springboot.spring.SpringBootMetadataRetriever.SPRING_BOOT_STARTER_WEB_ARTIFACT_ID;
+
 /**
  * @author <a href="ivan.st.ivanov@gmail.com">Ivan St. Ivanov</a>
  */
 public class SpringBootFacet extends AbstractFacet<Project> implements ProjectFacet {
+
+    public static final String CRUD_REPOSITORY_CLASS_NAME = "org.springframework.data.repository.CrudRepository";
+    public static final String PAGING_AND_SORTING_REPOSITORY_CLASS_NAME = "org.springframework.data.repository.PagingAndSortingRepository";
 
     @Inject
     private DependencyInstaller dependencyInstaller;
@@ -82,8 +87,8 @@ public class SpringBootFacet extends AbstractFacet<Project> implements ProjectFa
 
     public JavaInterfaceSource exportRepositoryForEntity(JavaInterfaceSource source,
             JavaClassSource entityClass, SpringBootRepositoryType repositoryType) {
-        String entytPkQualifiedName = null;
-        String simplePkName = null;
+        String entityPKQualifiedName = null;
+        String simplePKName = null;
         if (entityClass.hasAnnotation(IdClass.class)) {
             // AnnotationSource<JavaClassSource> idClassAnotation = entityClass
             // .getAnnotation(IdClass.class);
@@ -92,36 +97,31 @@ public class SpringBootFacet extends AbstractFacet<Project> implements ProjectFa
             Results.fail("Entites with IdClass primary key are not supported!");
         } else {
             for (FieldSource<JavaClassSource> field : entityClass.getFields()) {
-                if (field.hasAnnotation(Id.class)
-                        || field.hasAnnotation(EmbeddedId.class)) {
+                if (field.hasAnnotation(Id.class) || field.hasAnnotation(EmbeddedId.class)) {
                     Type<JavaClassSource> fieldType = field.getType();
-
-                    entytPkQualifiedName = fieldType.getQualifiedName();
-                    simplePkName = fieldType.getSimpleName();
-
+                    entityPKQualifiedName = fieldType.getQualifiedName();
+                    simplePKName = fieldType.getSimpleName();
                     break;
                 }
             }
         }
 
-        if (entytPkQualifiedName == null) {
+        if (entityPKQualifiedName == null) {
             Results.fail("Unable to detect entity primary key class type!");
         }
 
         switch (repositoryType) {
         case CRUD:
-            source.addImport("org.springframework.data.repository.CrudRepository");
-            source.addInterface("CrudRepository<" + entityClass.getName() + ","
-                    + simplePkName + ">");
+            source.addImport(CRUD_REPOSITORY_CLASS_NAME);
+            source.addInterface("CrudRepository<" + entityClass.getName() + "," + simplePKName + ">");
             break;
         case PAGING_AND_SORTING:
-            source.addImport("org.springframework.data.repository.PagingAndSortingRepository");
-            source.addInterface("PagingAndSortingRepository<"
-                    + entityClass.getName() + "," + simplePkName + ">");
+            source.addImport(PAGING_AND_SORTING_REPOSITORY_CLASS_NAME);
+            source.addInterface("PagingAndSortingRepository<"+ entityClass.getName() + "," + simplePKName + ">");
             break;
         }
 
-        source.addImport(entytPkQualifiedName);
+        source.addImport(entityPKQualifiedName);
         source.addImport(entityClass.getQualifiedName());
 
         return source;
