@@ -91,7 +91,7 @@ public class SpringBootSetupCommandTest {
 
     @Test
     public void shouldAddCustomSpringBootVersion() throws Exception {
-        final String version = "1.2.12.RELEASE";
+        final String version = "1.2.8.RELEASE";
         assertFalse(executeSetupCommand(version, null, null) instanceof Failed);
         assertVersion(version);
     }
@@ -107,7 +107,7 @@ public class SpringBootSetupCommandTest {
 
     @Test
     public void shouldSupportShellCommands() throws Exception {
-        String version = "1.2.13.RELEASE";
+        String version = "1.2.8.RELEASE";
         String targetPackage = "bg.jug.springboot";
         String applicationClass = "MyApplicationClass";
 
@@ -115,8 +115,8 @@ public class SpringBootSetupCommandTest {
         Result result = shellTest.execute(
                 "spring-boot-setup"
                         + " --version " + version
-                        + " --targetPackage " + targetPackage
-                        + " --applicationClass " + applicationClass,
+                        + " --target-package " + targetPackage
+                        + " --application-class " + applicationClass,
                 10, TimeUnit.SECONDS);
 
         assertFalse(result instanceof Failed);
