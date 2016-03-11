@@ -115,8 +115,8 @@ public class SpringBootSetupCommandTest {
         Result result = shellTest.execute(
                 "spring-boot-setup"
                         + " --version " + version
-                        + " --targetPackage " + targetPackage
-                        + " --applicationClass " + applicationClass,
+                        + " --target-package " + targetPackage
+                        + " --application-class " + applicationClass,
                 10, TimeUnit.SECONDS);
 
         assertFalse(result instanceof Failed);
