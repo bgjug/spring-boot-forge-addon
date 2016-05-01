@@ -28,7 +28,7 @@ import javax.persistence.Entity;
 import java.io.FileNotFoundException;
 import java.util.List;
 
-@FacetConstraint(SpringBootRestFacet.class)
+//@FacetConstraint(SpringBootRestFacet.class)
 public class SpringBootRepositoryCommand extends
         AbstractJavaSourceCommand<JavaInterfaceSource> {
 

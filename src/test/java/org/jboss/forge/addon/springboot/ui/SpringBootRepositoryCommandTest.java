@@ -2,6 +2,7 @@ package org.jboss.forge.addon.springboot.ui;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.forge.addon.javaee.jpa.JPAFacet;
 import org.jboss.forge.addon.parser.java.facets.JavaSourceFacet;
 import org.jboss.forge.addon.parser.java.resources.JavaResource;
 import org.jboss.forge.addon.projects.Project;
@@ -13,6 +14,8 @@ import org.jboss.forge.addon.springboot.facet.SpringBootJPAFacetImpl;
 import org.jboss.forge.addon.springboot.facet.SpringBootRestFacet;
 import org.jboss.forge.addon.ui.controller.CommandController;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
+import org.jboss.forge.addon.ui.result.Failed;
+import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.test.UITestHarness;
 import org.jboss.forge.arquillian.AddonDependencies;
 import org.jboss.forge.arquillian.archive.AddonArchive;
@@ -25,15 +28,12 @@ import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.jboss.forge.addon.javaee.JavaEEPackageConstants.DEFAULT_ENTITY_PACKAGE;
 import static org.jboss.forge.addon.springboot.ui.SpringBootRepositoryCommand.DEFAULT_REPOSITORY_PACKAGE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(Arquillian.class)
 public class SpringBootRepositoryCommandTest {
@@ -43,6 +43,7 @@ public class SpringBootRepositoryCommandTest {
     public static final String TARGET_PACKAGE = "targetPackage";
     public static final String NAMED = "named";
     public static final String OVERWRITE = "overwrite";
+    private String entityName;
 
     @Deployment
     @AddonDependencies
@@ -75,7 +76,8 @@ public class SpringBootRepositoryCommandTest {
     @Before
     public void setUp() throws IOException {
         project = projectHelper.createSpringBootProject();
-        projectHelper.createJPAEntity(project, "Customer");
+        entityName = "Customer";
+        projectHelper.createJPAEntity(project, entityName);
     }
 
     @Test
@@ -99,8 +101,6 @@ public class SpringBootRepositoryCommandTest {
 
     @Test
     public void testRepositoryCommandWithCrudRepository() throws Exception {
-        final String entityName = "Customer";
-        projectHelper.createJPAEntity(project, entityName);
         JavaResource repositoryResource = executeRepositoryCommand(entityName, "CustomerRepository",
                 SpringBootRepositoryType.CRUD);
 
@@ -122,6 +122,37 @@ public class SpringBootRepositoryCommandTest {
                 nonEntityClassName);
         executeRepositoryCommand(nonEntityClassName, "NonEntityRepository",
                 SpringBootRepositoryType.CRUD);
+    }
+
+    @Test
+    public void testShell() throws Exception {
+        String basePackageName = project.getFacet(JavaSourceFacet.class)
+                .getBasePackage();
+        String entityPackageName = basePackageName + "."
+                + DEFAULT_ENTITY_PACKAGE;
+        String repositoryPackageName = basePackageName
+                + DEFAULT_REPOSITORY_PACKAGE;
+        shellTest.getShell().setCurrentResource(project.getRoot());
+        Result result = shellTest.execute("spring-boot-repository --for-entity "
+                        + entityPackageName
+                        + ".Customer --named CustomerRepository --target-package "
+                        + repositoryPackageName + " --repository-type " + SpringBootRepositoryType.CRUD.toString(),
+                10, TimeUnit.SECONDS);
+        assertThat(result, not(instanceOf(Failed.class)));
+        assertTrue(project.hasFacet(JPAFacet.class));
+
+        JavaSourceFacet facet = project.getFacet(JavaSourceFacet.class);
+        JavaResource repositoryResource = facet
+                .getJavaResource(repositoryPackageName + ".CustomerRepository");
+        assertNotNull(repositoryResource);
+        assertThat(repositoryResource.getJavaType(),
+                is(instanceOf(JavaInterface.class)));
+
+        JavaInterfaceSource intf = repositoryResource
+                .getJavaType();
+        assertEquals(intf.getInterfaces().size(), 1);
+        String interfaceName = intf.getInterfaces().get(0);
+        assertEquals(interfaceName, "org.springframework.data.repository.CrudRepository");
     }
 
     private JavaResource executeRepositoryCommand(String forEntity, String repositoryName,

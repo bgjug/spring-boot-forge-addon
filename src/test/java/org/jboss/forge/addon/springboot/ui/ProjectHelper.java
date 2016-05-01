@@ -64,7 +64,7 @@ public class ProjectHelper {
 
         facetFactory.install(project, SpringBootFacet.class);
         facetFactory.install(project, SpringBootJPAFacetImpl.class);
-        facetFactory.install(project, SpringBootRestFacet.class);
+//        facetFactory.install(project, SpringBootRestFacet.class);
         return project;
     }
 

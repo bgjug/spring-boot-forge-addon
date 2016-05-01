@@ -18,6 +18,7 @@ import org.jboss.forge.addon.resource.FileResource;
 import org.jboss.forge.addon.resource.visit.VisitContext;
 import org.jboss.forge.addon.springboot.descriptors.SpringBootDescriptor;
 import org.jboss.forge.addon.springboot.descriptors.SpringBootPropertiesDescriptor;
+import org.jboss.forge.furnace.versions.SingleVersion;
 import org.jboss.forge.furnace.versions.Version;
 import org.jboss.forge.roaster.model.JavaType;
 import org.jboss.forge.roaster.model.source.JavaClassSource;
@@ -61,7 +62,7 @@ public class SpringBootJPAFacetImpl extends AbstractFacet<Project> implements
 
 	@Override
 	public boolean isInstalled() {
-		DependencyFacet facet = getFaceted().getFacet(DependencyFacet.class);
+        DependencyFacet facet = getFaceted().getFacet(DependencyFacet.class);
 
 		// application.properties has to exist
 		boolean result = getConfigFile().exists();
@@ -69,7 +70,7 @@ public class SpringBootJPAFacetImpl extends AbstractFacet<Project> implements
 		// check whether all dependencies are in place
 		for (Dependency dependency : DEPENDENCIES) {
 			result = result && facet.hasEffectiveDependency(dependency);
-		}
+        }
 
 		return result;
 	}
@@ -159,8 +160,7 @@ public class SpringBootJPAFacetImpl extends AbstractFacet<Project> implements
 
 	@Override
 	public Version getSpecVersion() {
-		// TODO: which JPA version do we stick to
-		return null;
+		return SingleVersion.valueOf("2.1");
 	}
 
 	@Override
