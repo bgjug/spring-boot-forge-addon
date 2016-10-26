@@ -23,7 +23,7 @@ public class SpringBootRestFacet extends AbstractFacet<Project> implements
 	private DependencyInstaller dependencyInstaller;
 
 	public static Dependency[] DEPENDENCIES = { DependencyBuilder.create(
-			"org.springframework.data").setArtifactId("spring-data-rest-core") };
+			"org.springframework.boot").setArtifactId("spring-boot-starter-data-rest") };
 
 	@Override
 	public boolean install() {
