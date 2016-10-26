@@ -1,11 +1,9 @@
 package ${controllerPackage};
 
-import javax.transaction.Transactional;
 import javax.validation.Valid;
 
 import ${entityPackage}.${entityName};
 import ${repositoryPackage}.${entityName}Repository;
-import org.hibernate.service.spi.InjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

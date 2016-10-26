@@ -84,7 +84,7 @@ public class SpringMvcScaffoldProvider implements ScaffoldProvider
    @Override
    public String getName()
    {
-      return "SpringMVC";
+      return "SpringMVC(JSP)";
    }
 
    @Override
@@ -426,7 +426,7 @@ public class SpringMvcScaffoldProvider implements ScaffoldProvider
 		StringBuilder columnData = new StringBuilder();
 		StringBuilder formData = new StringBuilder();
 		for (MemberSource<JavaClassSource, ?> f : entity.getFields()) {
-			columnHeader.append("<th>").append(f.getName()).append("}</th>");
+			columnHeader.append("<th>").append(f.getName()).append("</th>");
 			columnData.append("<td>${item.").append(f.getName())
 					.append("}</td>");
 			

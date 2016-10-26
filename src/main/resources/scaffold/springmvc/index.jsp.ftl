@@ -10,6 +10,12 @@
 
 <body>
 	Welcome to the Scaffolded Spring MVC application
+	
+	<ul>
+		<li>
+			TODO links
+		</li>
+	</ul>
 </body>
 
 </html>
